@@ -64,5 +64,4 @@ defmodule NewRelic.Poller do
   defp default_error_cb(:push_failed, err_msg) do
     Logger.error("NewRelic.Poller: push failed: #{inspect err_msg}")
   end
-
 end

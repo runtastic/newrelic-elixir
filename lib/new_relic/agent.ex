@@ -1,5 +1,6 @@
 defmodule NewRelic.Agent do
-  @base_url "http://~s/agent_listener/invoke_raw_method?"
+  @base_url "https://~s/agent_listener/invoke_raw_method?"
+  require Logger
 
   @doc """
   Connects to New Relic and sends the hopefully correctly
@@ -13,7 +14,7 @@ defmodule NewRelic.Agent do
         :ok ->
           push_error_data(collector, run_id, errors)
         error ->
-          IO.inspect error
+          Logger.error("NewRelic.Agent: push_metric_data failed: #{inspect error}")
       end
     end
   end
@@ -90,7 +91,7 @@ defmodule NewRelic.Agent do
       {:ok, {{503, _}, _, body}} ->
         raise RuntimeError.exception("newrelic - push_data - #{inspect body}")
       {:ok, resp} ->
-        IO.inspect resp
+        Logger.error("NewRelic.Agent: push_data failed: #{inspect resp}")
       {:error, :timeout} ->
         raise RuntimeError.exception("newrelic - push_data - timeout")
     end
@@ -127,8 +128,10 @@ defmodule NewRelic.Agent do
       marshal_format: :json
     ]
     base_url = String.replace(@base_url, "~s", host)
-    segments = List.flatten([base_url, urljoin(args ++ base_args)])
-    Enum.join(segments) |> String.to_char_list
+    [base_url, urljoin(args ++ base_args)]
+    |> List.flatten
+    |> Enum.join
+    |> String.to_char_list
   end
 
   defp urljoin([]), do: []
@@ -137,5 +140,4 @@ defmodule NewRelic.Agent do
   end
 
   defp url_var({key, value}), do: [to_string(key), "=", to_string(value)]
-
 end

@@ -1,31 +1,51 @@
-# NewRelic agent for Elixir
+# Yet another NewRelic elixir agent
 
-[![Build Status](https://travis-ci.org/romul/newrelic.ex.svg?branch=master)](https://travis-ci.org/romul/newrelic.ex)
+[![Build Status](https://travis-ci.org/andreaseger/newrelic-elixir.svg?branch=master)](https://travis-ci.org/andreaseger/newrelic-elixir)
 
-Instrument your Phoenix applications with New Relic.
+Instrument your Elixir applications with New Relic.
 
-It currently supports instrumenting Phoenix controllers and Ecto repositories to record
-response times for web transactions and database queries.
+Based on [newrelic.ex](https://github.com/romul/newrelic.ex) which itself is
+based on [newrelic-erlang](https://github.com/wooga/newrelic-erlang)
+and [new-relixir](https://github.com/TheRealReal/new-relixir).
 
-Based on [newrelic-erlang](https://github.com/wooga/newrelic-erlang) and [new-relixir](https://github.com/TheRealReal/new-relixir)
+It's a mess, isn't it :(
 
+## Why
 
-## Why yet another?
+Well the available solution in elixir are all bound to phoenix and add IMHO some
+ugly workarounds to make ecto instrumentation work.
 
-1. `newrelic-erlang` & `new-relixir` look abandoned, so the main goal is to create a maintainable integration with NewRelic open to pull requests.
-2. `newrelic-erlang` has a performance issue related to `statman` usage. Look at a real-world example of `new-relixir` usage (the project handles about 25 rps):
+I wasn't comfortable enough with erlang to use `newrelic-erlang` directly with
+confidence but after studying `newrelic.ex` which is for many parts a direct
+translation of `newrelic-erlang` I discovered a couple issues which lead me to
+strip the codebase down to its essentials and implement the basic needs for
+instrumenting plugs, generic method calls and have them show up in the correct
+categories at new relic.
 
-![CPU load](https://api.monosnap.com/rpc/file/download?id=WhmimUZqDkvFkbznpaD6OmqG1tbP1G)
-![Memory usage](https://api.monosnap.com/rpc/file/download?id=fI3kVrEyyebqIiIhs38yLZUQaQJkkc)
+Additionally to the tracking issues encountered I also wanted to have my agent
+use ssl when communicating with new relic.
 
-The `new_relic` isn't suffer from such the leaks.
+## It is working?
+
+This library is in a very early stage but it appears to track the essentials to
+new relic as can be seen in the screenshot below.
+
+![newrelic-elixir-initial-test](https://cloud.githubusercontent.com/assets/172702/23795528/6cd875fc-0596-11e7-9b95-50205b728601.png)
+
+The app in test was a simple locally hosted mix application using a plug
+endpoint which basically only had some sleep timers over a few instrumented
+functions and a http call to another locally hosted endpoint (also instrumented
+via new_relic). This shows that both simple method tracer but also tracing from
+one transaction to another seems to be working.
+
+Even with the high load shown the memory consumption stays constant.
 
 ## Usage
 
 The following instructions show how to add instrumentation with New Relic to a hypothetical
 Phoenix application named `MyApp`.
 
-1.  Add `new_relic` to your list of dependencies and start-up applications in `mix.exs`:
+1.  Just add `new_relic` to your list of dependencies.
 
     ```elixir
     # mix.exs
@@ -36,12 +56,11 @@ Phoenix application named `MyApp`.
       # ...
 
       def application do
-        [mod: {MyApp, []},
-         applications: [:new_relic]]
+        [mod: {MyApp, []}]
       end
 
       defp deps do
-        [{:new_relic, "~> 0.1.1"}]
+        [{:new_relic, git: "https://github.com/andreaseger/newrelic-elixir", branch: "master"}]
       end
     end
     ```
@@ -59,89 +78,4 @@ Phoenix application named `MyApp`.
     ```
 
 
-3.  Define a module to wrap your repository's methods with New Relic instrumentation:
-
-    ```elixir
-    # lib/my_app/repo.ex
-
-    defmodule MyApp.Repo do
-      use Ecto.Repo, otp_app: :my_app
-
-      defmodule NewRelic do
-        use Elixir.NewRelic.Plug.Repo, repo: MyApp.Repo
-      end
-    end
-    ```
-
-    Now `MyApp.Repo.NewRelic` can be used as a substitute for `MyApp.Repo`. If a `Plug.Conn` is
-    provided as the `:conn` option to any of the wrapper's methods, it will instrument the response
-    time for that call. Otherwise, the repository will behave the same as the repository that it
-    wraps.
-
-4.  For any Phoenix controller that you want to instrument, add `NewRelic.Plug.Phoenix` and
-    replace existing aliases to your application's repository with an alias to your New Relic
-    repository wrapper. If instrumenting all controllers, update `web/web.ex`:
-
-    ```elixir
-    # web/web.ex
-
-    defmodule MyApp.Web do
-      def controller do
-        quote do
-          # ...
-          plug NewRelic.Plug.Phoenix
-          alias MyApp.Repo.NewRelic, as: Repo # Replaces `alias MyApp.Repo`
-        end
-      end
-    end
-    ```
-
-5.  Update your controllers to pass `conn` as an option to your New Relic repo wrapper:
-
-    ```elixir
-    # web/controllers/users.ex
-
-    defmodule MyApp.UserController do
-      use MyApp.Web, :controller
-
-      def index(conn, _params) do
-        users = Repo.all(User, conn: conn) # Replaces `Repo.all(User)`
-        # ...
-      end
-    end
-    ```
-
-### Instrumenting Custom Repo Methods
-
-If you've defined custom methods on your repository, you will need to define them on your wrapper
-module as well. In the wrapper module, simply call your repository's original method inside a
-closure that you pass to `instrument_db`:
-
-```elixir
-# lib/my_app/repo.ex
-
-defmodule MyApp.Repo do
-  use Ecto.Repo, otp_app: :my_app
-
-  def custom_method(queryable, opts \\ []) do
-    # ...
-  end
-
-  defmodule NewRelic do
-    use NewRelic.Plug.Repo, repo: MyApp.Repo
-
-    def custom_method(queryable, opts \\ []) do
-      instrument_db(:custom_method, queryable, opts, fn() ->
-        MyApp.Repo.custom_method(queryable, opts)
-      end)
-    end
-  end
-end
-```
-
-When using the wrapper module's `custom_method`, the time it takes to call
-`MyApp.Repo.custom_method/2` will be recorded to New Relic.
-
-
-
-Distributed under the [MIT License](LICENSE).
+3. TODO

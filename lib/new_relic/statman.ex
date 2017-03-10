@@ -7,7 +7,7 @@ defmodule NewRelic.Statman do
   def transform_aggregated_metrics(metrics, errors, time) do
     ms = metrics
       |> Map.to_list
-      |> Enum.map(fn(m) -> transform_metric(m) end)
+      |> Enum.reduce([], fn(m,a) -> a ++ transform_metric(m) end)
       |> Enum.filter(&(&1 != []))
 
     errs = errors |> Map.to_list |> Enum.map(fn(metric) -> transform_error_counter(metric) end)
@@ -16,7 +16,7 @@ defmodule NewRelic.Statman do
   end
 
   def transform_error_counter({{scope, type, message}, count}) do
-    error = [
+    [
       :os.system_time(:micro_seconds) / 1_000_000,
       scope2bin(scope),
       to_bin(message),
@@ -27,7 +27,8 @@ defmodule NewRelic.Statman do
         request_params: %{},
         request_uri: scope}]
     ]
-    List.duplicate(error, count) |> List.flatten
+    |> List.duplicate(count)
+    |> List.flatten
   end
 
   defp transform_metric(metric) do
@@ -86,19 +87,19 @@ defmodule NewRelic.Statman do
         ]
 
       {{:background, scope}, :total} when is_binary(scope) ->
-          [%{name: bgscope2bin(scope), scope: ""}, data]
+          [ [%{name: bgscope2bin(scope), scope: ""}, data] ]
 
       {{:background, scope}, {class, segment}} when is_binary(scope) ->
-          [%{name: class2bin(class) <> "/" <> to_bin(segment), scope: bgscope2bin(scope)}, data]
+          [[%{name: class2bin(class) <> "/" <> to_bin(segment), scope: bgscope2bin(scope)}, data]]
 
       {scope, {class, segment}} when is_binary(scope) ->
-          [%{name: class2bin(class) <> "/" <> to_bin(segment), scope: scope2bin(scope)}, data]
+          [[%{name: class2bin(class) <> "/" <> to_bin(segment), scope: scope2bin(scope)}, data]]
 
       {scope, :total} when is_binary(scope) ->
-          [%{name: "WebTransaction/Uri/#{scope}", scope: ""}, data]
+          [[%{name: "WebTransaction/Uri/#{scope}", scope: ""}, data]]
 
       {a, b} when is_atom(a) and is_atom(b) ->
-          [%{name: "OtherTransaction/#{a}/#{b}", scope: ""}, data]
+          [[%{name: "OtherTransaction/#{a}/#{b}", scope: ""}, data]]
       _ ->
           []
     end
@@ -139,9 +140,7 @@ defmodule NewRelic.Statman do
     Enum.map(list, fn(elem) -> get_nth(elem, name, n-1) end)
   end
 
-  defp get_nth([[_, []]], _, _), do: 0
   defp get_nth([_, []], _, _), do: 0
-  defp get_nth([[struct, data_list]], name, n), do: get_nth([struct, data_list], name, n)
   defp get_nth([struct, data_list], name, n) do
     if String.contains?(struct[:name], name) do
       if struct[:scope] == "" do
@@ -154,26 +153,19 @@ defmodule NewRelic.Statman do
     end
   end
 
-
-
   defp class2bin(:db), do: "Database"
   defp class2bin(atom) when is_atom(atom) do
     String.capitalize to_string(atom)
   end
 
-  defp to_bin(atom) when is_atom(atom) do
-    to_string(atom)
-  end
-  defp to_bin(binary) when is_binary(binary) do
-    binary
-  end
+  defp to_bin(atom) when is_atom(atom), do: to_string(atom)
+  defp to_bin(binary) when is_binary(binary), do: binary
 
   defp bgscope2bin(scope) do
-    "OtherTransaction/Python/#{scope}"
+    "OtherTransaction/Background/#{scope}"
   end
 
   defp scope2bin(url) when is_binary(url) do
     "WebTransaction/Uri/#{url}"
   end
-
 end

@@ -4,65 +4,70 @@ defmodule NewRelic.TransactionTest do
 
   alias NewRelic.Transaction
 
-  @name "Test Transaction"
+  setup do
+    [name: "Test Transaction"]
+  end
 
   # finish
 
-  test "finish records elapsed time with correct key" do
-    transaction = Transaction.start(@name)
+  test "finish records elapsed time with correct key", context do
+    transaction = Transaction.start(context[:name])
     Transaction.finish(transaction)
 
-    assert_contains(get_metric_keys(), {@name, :total})
+    assert_contains(get_metric_keys(), {context[:name], :total})
   end
 
-  test "finish records accurate elapsed time" do
+  test "finish records accurate elapsed time", context do
     {_, elapsed_time} = :timer.tc(fn() ->
-      transaction = Transaction.start(@name)
+      transaction = Transaction.start(context[:name])
       :ok = :timer.sleep(42)
       Transaction.finish(transaction)
     end)
 
-    [recorded_time] = get_metric_by_key({@name, :total})
+    [recorded_time] = get_metric_by_key({context[:name], :total})
     assert_between(recorded_time, 42000, elapsed_time)
   end
 
-  # record_db
+  describe "record :event" do
+    setup context do
+      Map.merge(context, %{elapsed: 242, event: "SomeModule.methodname"})
+    end
 
-  @model "SomeModel"
-  @action "get"
-  @elapsed 42
+    test "record_db records query time with correct key when given a string", context do
+      transaction = Transaction.start(context[:name])
+      Transaction.record(transaction, :event, context[:event], context[:elapsed])
 
-  test "record_db records query time with correct key when given model and action tuple" do
-    transaction = Transaction.start(@name)
-    Transaction.record_db(transaction, {@model, @action}, @elapsed)
+      assert_contains(get_metric_keys(), {context[:name], {:event, context[:event]}})
+    end
 
-    assert_contains(get_metric_keys(), {@name, {:db, "#{@model}.#{@action}"}})
+    test "record_db records accurate query time when given a string", context do
+      transaction = Transaction.start(context[:name])
+      Transaction.record(transaction, :event, context[:event], context[:elapsed])
+
+      [recorded_time] = get_metric_by_key({context[:name], {:event, context[:event]}})
+
+      assert recorded_time == context[:elapsed]
+    end
   end
+  describe "record :db" do
+    setup context do
+      Map.merge(context, %{elapsed: 42, query: "FooBar"})
+    end
 
-  test "record_db records accurate query time when given model and action tuple" do
-    transaction = Transaction.start(@name)
-    Transaction.record_db(transaction, {@model, @action}, @elapsed)
+    test "record_db records query time with correct key when given a string", context do
+      transaction = Transaction.start(context[:name])
+      Transaction.record(transaction, :db, context[:query], context[:elapsed])
 
-    [recorded_time] = get_metric_by_key({@name, {:db, "#{@model}.#{@action}"}})
+      assert_contains(get_metric_keys(), {context[:name], {:db, context[:query]}})
+    end
 
-    assert recorded_time == @elapsed
-  end
+    test "record_db records accurate query time when given a string", context do
+      transaction = Transaction.start(context[:name])
+      Transaction.record(transaction, :db, context[:query], context[:elapsed])
 
-  @query "FooBar"
+      [recorded_time] = get_metric_by_key({context[:name], {:db, context[:query]}})
 
-  test "record_db records query time with correct key when given a string" do
-    transaction = Transaction.start(@name)
-    Transaction.record_db(transaction, @query, @elapsed)
-
-    assert_contains(get_metric_keys(), {@name, {:db, @query}})
-  end
-
-  test "record_db records accurate query time when given a string" do
-    transaction = Transaction.start(@name)
-    Transaction.record_db(transaction, @query, @elapsed)
-
-    [recorded_time] = get_metric_by_key({@name, {:db, @query}})
-
-    assert recorded_time == @elapsed
+      assert recorded_time == context[:elapsed]
+    end
   end
 end
