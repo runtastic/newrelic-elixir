@@ -29,16 +29,10 @@ use Mix.Config
 #
 #     import_config "#{Mix.env}.exs"
 
-case Mix.env do
-  :dev ->
-    config :mix_test_watch,
-      tasks: [
-        "test",
-        "credo",
-      ]
-  :test ->
-    config :new_relic,
-      application_name: "Test",
-      license_key: "xyz"
-  _ -> nil
+if Mix.env == :dev do
+  config :mix_test_watch,
+    tasks: [
+      "test",
+      # "credo",
+    ]
 end

@@ -2,19 +2,25 @@ defmodule NewRelic.Collector do
   use GenServer
   @name __MODULE__
   @default_state [%{}, %{}]
+  @type state :: nonempty_improper_list(pos_integer, map())
 
   def start_link(_opts \\ []) do
     GenServer.start_link(@name, [current_time() | @default_state], name: @name)
   end
 
-  def record_value(transaction_name, data, elapsed) do
-    GenServer.cast(@name, {:record_value, {transaction_name, data}, elapsed})
+  alias NewRelic.{TransactionEvent,TransactionError}
+
+  @spec record_value(String.t, TransactionEvent.t, non_neg_integer()) :: nil
+  def record_value(transaction_name, %TransactionEvent{}=event, elapsed) do
+    GenServer.cast(@name, {:record_value, {transaction_name, TransactionEvent.to_key(event)}, elapsed})
   end
 
-  def record_error(transaction_name, {type, message}) do
-    GenServer.cast(@name, {:record_error, {transaction_name, type, message}})
+  @spec record_error(String.t, TransactionError.t) :: nil
+  def record_error(transaction_name, %TransactionError{}=error) do
+    GenServer.cast(@name, {:record_error, {transaction_name, error}})
   end
 
+  @spec poll() :: state
   def poll do
     GenServer.call(@name, :poll)
   end

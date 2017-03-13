@@ -17,50 +17,43 @@ defmodule NewRelic.Poller do
     {:ok, Map.put(state, :timer, timer)}
   end
 
-  def handle_call(_msg, _from, state) do
-    {:reply, :ok, state}
-  end
-
-  def handle_cast(_msg, state) do
-    {:noreply, state}
-  end
-
   def handle_info(:poll, %{poll_fun: poll_fun, error_cb: error_cb, timer: old_timer}) do
     :erlang.cancel_timer(old_timer)
     timer = :erlang.send_after(@poll_interval, self(), :poll)
-    {:ok, hostname} = :inet.gethostname()
+
+    with {:ok, hostname} <- :inet.gethostname(),
+         {:ok, metrics, errors} <- poll(poll_fun, error_cb) do
+      try do
+        NewRelic.Agent.push(hostname, metrics, errors)
+      rescue
+        error -> error_cb.(:push_failed, error)
+      end
+    else
+      _ -> :ok
+    end
+    {:noreply, %{poll_fun: poll_fun, error_cb: error_cb, timer: timer}}
+  end
+
+  ## Private functions
+
+  defp poll(poll_fun, error_cb) do
     try do
       case poll_fun.() do
         {[], []} ->
           :ok
         {metrics, errors, {start_time, end_time}} ->
-          metrics = [
-            round(start_time / 1000),
-            round(end_time / 1000),
-            metrics
-          ]
-          try do
-            NewRelic.Agent.push(hostname, metrics, errors)
-          rescue
-            error -> error_cb.(:push_failed, error)
-          end
+          metrics = [ round(start_time / 1000), round(end_time / 1000), metrics ]
+          {:ok, metrics, errors}
       end
     rescue
       error -> error_cb.(:poll_failed, error)
     end
-
-    {:noreply, %{poll_fun: poll_fun, error_cb: error_cb, timer: timer}}
   end
-
-  def handle_info(_msg, state) do
-    {:noreply, state}
-  end
-
-  ## Private functions
 
   defp default_error_cb(:poll_failed, err_msg) do
     Logger.error("NewRelic.Poller: polling failed: #{inspect err_msg}")
   end
+
   defp default_error_cb(:push_failed, err_msg) do
     Logger.error("NewRelic.Poller: push failed: #{inspect err_msg}")
   end

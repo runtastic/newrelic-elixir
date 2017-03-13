@@ -1,53 +1,40 @@
 defmodule NewRelic.Statman do
   def poll do
-    [end_time, start_time, metrics, errors] = NewRelic.Collector.poll
+    NewRelic.Collector.poll |> aggregate
+  end
+
+  def aggregate(data) do
+    [end_time, start_time, metrics, errors] = data
     transform_aggregated_metrics(metrics, errors, {start_time, end_time})
   end
 
   def transform_aggregated_metrics(metrics, errors, time) do
     ms = metrics
       |> Map.to_list
-      |> Enum.reduce([], fn(m,a) -> a ++ transform_metric(m) end)
+      |> Enum.reduce([], fn(m,a) -> a ++ transform_histogram(m) end)
       |> Enum.filter(&(&1 != []))
 
-    errs = errors |> Map.to_list |> Enum.map(fn(metric) -> transform_error_counter(metric) end)
+    errs = errors
+    |> Map.to_list
+    |> Enum.map(fn(metric) -> transform_error_counter(metric) end)
 
-    {[webtransaction_total(ms), db_total(ms) | errors_total(errs) ++ ms], errs, time}
+    {[webtransaction_total(ms), db_total(ms) | errors_total(errs) ++ ms], errs, time} |> IO.inspect
   end
 
-  def transform_error_counter({{scope, type, message}, count}) do
+  def transform_error_counter({{scope, error}, count}) do
     [
       :os.system_time(:micro_seconds) / 1_000_000,
       scope2bin(scope),
-      to_bin(message),
-      to_bin(type),
+      to_bin(error.message),
+      to_bin(error.name),
       [%{
         parameter_groups: %{},
-        stack_trace: [],
+        stack_trace: error.stack_trace,
         request_params: %{},
         request_uri: scope}]
     ]
     |> List.duplicate(count)
     |> List.flatten
-  end
-
-  defp transform_metric(metric) do
-    transform_histogram(metric)
-  end
-
-
-  def transform_counter(metric) do
-    case metric[:key] do
-      {scope, {:error, {_type, _message}}} when is_binary(scope) ->
-        errors_count = metric[:value]
-        if errors_count > 0 do
-          [[%{name: "Errors/WebTransaction/Uri/#{scope}", scope: ""}, [errors_count, 0.0, 0.0, 0.0, 0.0, 0.0]
-           ]]
-        else
-          []
-        end
-      _ -> []
-    end
   end
 
   def summary(values) do
@@ -66,6 +53,7 @@ defmodule NewRelic.Statman do
   def summary([v|rest], {count, sum, min, max, sum2}) do
     summary(rest, {count+1, sum+v, v < min && v || min, v > max && v || max, sum2+v*v})
   end
+
   def transform_histogram({key, values}) do
     data = summary(values)
 
@@ -89,11 +77,11 @@ defmodule NewRelic.Statman do
       {{:background, scope}, :total} when is_binary(scope) ->
           [ [%{name: bgscope2bin(scope), scope: ""}, data] ]
 
-      {{:background, scope}, {class, segment}} when is_binary(scope) ->
-          [[%{name: class2bin(class) <> "/" <> to_bin(segment), scope: bgscope2bin(scope)}, data]]
+      {{:background, scope}, {category, segment}} when is_binary(scope) ->
+          [[%{name: category2bin(category) <> "/" <> to_bin(segment), scope: bgscope2bin(scope)}, data]]
 
-      {scope, {class, segment}} when is_binary(scope) ->
-          [[%{name: class2bin(class) <> "/" <> to_bin(segment), scope: scope2bin(scope)}, data]]
+      {scope, {category, segment}} when is_binary(scope) ->
+          [[%{name: category2bin(category) <> "/" <> to_bin(segment), scope: scope2bin(scope)}, data]]
 
       {scope, :total} when is_binary(scope) ->
           [[%{name: "WebTransaction/Uri/#{scope}", scope: ""}, data]]
@@ -153,8 +141,8 @@ defmodule NewRelic.Statman do
     end
   end
 
-  defp class2bin(:db), do: "Database"
-  defp class2bin(atom) when is_atom(atom) do
+  defp category2bin(:db), do: "Database"
+  defp category2bin(atom) when is_atom(atom) do
     String.capitalize to_string(atom)
   end
 

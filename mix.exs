@@ -9,6 +9,7 @@ defmodule NewRelic.Mixfile do
      start_permanent: Mix.env == :prod,
      description: "Elixir library for sending metrics to New Relic.",
      # package: package(),
+     elixirc_paths: elixirc_paths(Mix.env),
      deps: deps()]
   end
 
@@ -19,6 +20,9 @@ defmodule NewRelic.Mixfile do
     [extra_applications: [:logger],
      mod: {NewRelic, []}]
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Dependencies can be Hex packages:
   #
