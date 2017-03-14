@@ -24,7 +24,9 @@ defmodule NewRelic.Poller do
     with {:ok, hostname} <- :inet.gethostname(),
          {:ok, metrics, errors} <- poll(poll_fun, error_cb) do
       try do
-        NewRelic.Agent.push(hostname, metrics, errors)
+        hostname
+        |> to_string
+        |> NewRelic.Agent.push(metrics, errors)
       rescue
         error -> error_cb.(:push_failed, error)
       end

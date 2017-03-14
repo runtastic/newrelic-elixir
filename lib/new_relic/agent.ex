@@ -38,13 +38,15 @@ defmodule NewRelic.Agent do
 
   def connect(collector, hostname, attempts_count \\ 1) do
     url = url(collector, [method: :connect])
+    system_pid = System.get_pid |> Integer.parse |> elem(0)
+    app_name = Application.get_env(:new_relic, :application_name)
 
     data = [%{
       :agent_version => "1.5.0.103",
-      :app_name => [app_name()],
-      :host => l2b(hostname),
-      :identifier => app_name(),
-      :pid => l2i(:os.getpid()),
+      :app_name => [app_name],
+      :host => hostname,
+      :identifier => app_name,
+      :pid => system_pid,
       :environment => [],
       :language => Application.get_env(:new_relic, :language, "python"),
       :settings => %{}
@@ -98,22 +100,6 @@ defmodule NewRelic.Agent do
   end
 
   ## Helpers
-
-  defp l2b(char_list) do
-    to_string(char_list)
-  end
-  defp l2i(char_list) do
-    :erlang.list_to_integer(char_list)
-  end
-
-  defp app_name() do
-    Application.get_env(:new_relic, :application_name)
-  end
-
-  defp license_key() do
-    Application.get_env(:new_relic, :license_key)
-  end
-
   def request(url, body \\ "[]") do
     :lhttpc.request(url, :post, [{"Content-Encoding", "identity"}], body, 5000)
   end
@@ -122,9 +108,10 @@ defmodule NewRelic.Agent do
     url("collector.newrelic.com", args)
   end
   def url(host, args) do
+    license_key = Application.get_env(:new_relic, :license_key)
     base_args = [
       protocol_version: 10,
-      license_key: license_key(),
+      license_key: license_key,
       marshal_format: :json
     ]
     base_url = String.replace(@base_url, "~s", host)
