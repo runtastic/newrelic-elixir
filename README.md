@@ -84,7 +84,7 @@ Phoenix application named `MyApp`.
       end
 
       defp deps do
-        [{:new_relic, git: "https://github.com/andreaseger/newrelic-elixir", branch: "master"}]
+        [{:new_relic, git: "https://github.com/runtastic/newrelic-elixir", branch: "master"}]
       end
     end
     ```

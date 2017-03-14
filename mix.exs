@@ -44,6 +44,6 @@ defmodule NewRelic.Mixfile do
   # defp package do
   #   [maintainers: ["Andreas Eger"],
   #    licenses: ["MIT"],
-  #    links: %{"Github" => "https://github.com/andreaseger/newrelic-elixir"}]
+  #    links: %{"Github" => "https://github.com/runtastic/newrelic-elixir"}]
   # end
 end
