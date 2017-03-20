@@ -18,7 +18,7 @@ defmodule NewRelic.Statman do
     |> Map.to_list
     |> Enum.map(fn(metric) -> transform_error_counter(metric) end)
 
-    {[webtransaction_total(ms), db_total(ms) | errors_total(errs) ++ ms], errs, time} |> IO.inspect
+    {[webtransaction_total(ms), db_total(ms) | errors_total(errs) ++ ms], errs, time}
   end
 
   def transform_error_counter({{scope, error}, count}) do
