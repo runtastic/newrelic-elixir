@@ -29,6 +29,7 @@ defmodule NewRelic.Instrumentation do
 
   @spec error(Plug.Conn.t | NewRelic.Transaction.t, String.t, String.t, list(String.t)) :: any()
   def error(conn_or_transaction, name, msg, stack_trace \\ [])
+  def error(nil,_,_,_), do: nil
   def error(%Plug.Conn{}=conn, name, msg, stack_trace) do
     conn
     |> get_transaction_from_conn
