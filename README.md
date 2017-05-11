@@ -1,5 +1,7 @@
 # Yet another NewRelic elixir agent
 
+**Development temporary halted**
+
 [![Build Status](https://travis-ci.org/runtastic/newrelic-elixir.svg?branch=master)](https://travis-ci.org/runtastic/newrelic-elixir)
 
 Instrument your Elixir applications with New Relic.
