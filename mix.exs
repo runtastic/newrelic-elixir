@@ -4,7 +4,7 @@ defmodule NewRelic.Mixfile do
   def project do
     [app: :new_relic,
      version: "0.1.1",
-     elixir: "~> 1.4",
+     elixir: "~> 1.3.0",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: "Elixir library for sending metrics to New Relic.",
