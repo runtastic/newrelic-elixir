@@ -32,7 +32,7 @@ defmodule NewRelic.Mixfile do
   defp deps do
     [{:plug, "~> 1.3"},
      {:lhttpc, "~> 1.4"},
-     {:poison, "~> 3.0"},
+     {:poison, "~> 2.2.0"},
      {:decorator, "~> 1.0"},
      {:credo, "~> 0.5", only: [:dev, :test]},
      {:mix_test_watch, "~> 0.3", only: :dev, runtime: false},
