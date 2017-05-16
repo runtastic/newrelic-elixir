@@ -49,7 +49,7 @@ defmodule NewRelic.Agent do
       :language => Application.get_env(:new_relic, :language, "python"),
       :settings => %{}
     }]
-
+    Logger.info "Connect Url: #{url}, data: #{inspect data}"
     case request(url, Poison.encode!(data)) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         struct = Poison.decode!(body)
@@ -79,6 +79,7 @@ defmodule NewRelic.Agent do
   end
 
   def push_data(url, data) do
+    Logger.info "push Url: #{url}, data: #{inspect data}"
     case request(url, Poison.encode!(data)) do
       {:ok, %HTTPoison.Response{status_code: 200, body: response}} ->
         struct = Poison.decode!(response)
@@ -117,7 +118,7 @@ defmodule NewRelic.Agent do
   def request(url, body \\ "[]") do
     Logger.info("[HTTPoison_request] [#{url}] [#{body}]")
     HTTPoison.post(url, body, [{"Content-Encoding", "identity"}], hackney: [timeout: 5000, max_connections: 1000])
-    Logger.info("[HTTPoison_request_response] [inspect response]")
+    Logger.info("[HTTPoison_request_response] [#{inspect response}]")
   end
 
   def url(args) do
