@@ -1,6 +1,7 @@
-# Yet another NewRelic elixir agent
+# Prototype package only - use at your own risk!
+**Development currently halted so we unfortunatly can't give you any support in trying this package.**
 
-**Development temporary halted**
+# Yet another NewRelic elixir agent
 
 [![Build Status](https://travis-ci.org/runtastic/newrelic-elixir.svg?branch=master)](https://travis-ci.org/runtastic/newrelic-elixir)
 
@@ -38,7 +39,7 @@ build the instrumentation logic and interface on top of it.
 
 ## It is working?
 
-This library is in a very early stage but it appears to be able track the
+This library is in a **very early** stage but it appears to be able track the
 essentials of a transaction to new relic as can be seen in the screenshot below.
 
 ![newrelic-elixir-initial-test](https://cloud.githubusercontent.com/assets/172702/23795528/6cd875fc-0596-11e7-9b95-50205b728601.png)
@@ -107,10 +108,12 @@ Phoenix application named `MyApp`.
 3. TODO
 
 ## Contributing
-Bug reports and pull requests are welcome on GitHub at
+
+Development is currently on hold.
+~~Bug reports and pull requests are welcome on GitHub at
 https://github.com/runtastic/newrelic-elixir. This project is intended to be a
 safe, welcoming space for collaboration, and contributors are expected to adhere
-to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.~~
 
 ## License
 
