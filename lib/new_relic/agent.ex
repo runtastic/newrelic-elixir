@@ -115,8 +115,9 @@ defmodule NewRelic.Agent do
   end
 
   def request(url, body \\ "[]") do
-    Logger.error("[lhttpc_request] [#{url}] [#{body}]")
-    :lhttpc.request(url, :post, [{"Content-Encoding", "identity"}], body, 5000)
+    Logger.info("[lhttpc_request] [#{url}] [#{body}]")
+    response = :lhttpc.request(url, :post, [{"Content-Encoding", "identity"}], body, 5000)
+    Logger.info("[lhttpc_request_response] [inspect response]")
   end
 
   def url(args) do
