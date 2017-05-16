@@ -25,12 +25,12 @@ defmodule NewRelic.Agent do
   def get_redirect_host() do
     url = url(method: :get_redirect_host)
     case request(url) do
-      {:ok, {{200, 'OK'}, _, body}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         struct = Poison.decode!(body)
         struct["return_value"]
-      {:ok, {{503, _}, _, _}} ->
+      {:ok, %HTTPoison.Response{status_code: 503}} ->
         raise RuntimeError.message("newrelic_down")
-      {:error, :timeout} ->
+      _error ->
         raise RuntimeError.message("newrelic_down")
     end
   end
@@ -51,13 +51,13 @@ defmodule NewRelic.Agent do
     }]
 
     case request(url, Poison.encode!(data)) do
-      {:ok, {{200, 'OK'}, _, body}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         struct = Poison.decode!(body)
         return = struct["return_value"]
         return["agent_run_id"]
-      {:ok, {{503, _}, _, body}} ->
+      {:ok, %HTTPoison.Response{status_code: 503, body: body}} ->
         raise RuntimeError.exception("newrelic - connect - #{inspect body}")
-      {:error, :timeout} ->
+      _error ->
         if attempts_count > 0 do
           connect(collector, hostname, attempts_count-1)
         else
@@ -80,7 +80,7 @@ defmodule NewRelic.Agent do
 
   def push_data(url, data) do
     case request(url, Poison.encode!(data)) do
-      {:ok, {{200, 'OK'}, _, response}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: response}} ->
         struct = Poison.decode!(response)
         case struct["exception"] do
           nil ->
@@ -88,11 +88,11 @@ defmodule NewRelic.Agent do
           exception ->
             {:error, exception}
         end;
-      {:ok, {{503, _}, _, body}} ->
+      {:ok, %HTTPoison.Response{status_code: 503, body: body}} ->
         raise RuntimeError.exception("newrelic - push_data - #{inspect body}")
       {:ok, resp} ->
         Logger.error("NewRelic.Agent: push_data failed: #{inspect resp}")
-      {:error, :timeout} ->
+      _error ->
         raise RuntimeError.exception("newrelic - push_data - timeout")
     end
   end
@@ -116,7 +116,8 @@ defmodule NewRelic.Agent do
 
   def request(url, body \\ "[]") do
     Logger.info("[lhttpc_request] [#{url}] [#{body}]")
-    response = :lhttpc.request(url, :post, [{"Content-Encoding", "identity"}], body, 5000)
+    # response = :lhttpc.request(url, :post, [{"Content-Encoding", "identity"}], body, 5000)
+    HTTPoison.post(url, body, [{"Content-Encoding", "identity"}], hackney: [timeout: 5000, max_connections: 1000])
     Logger.info("[lhttpc_request_response] [inspect response]")
   end
 
