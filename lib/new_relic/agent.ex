@@ -117,8 +117,9 @@ defmodule NewRelic.Agent do
 
   def request(url, body \\ "[]") do
     Logger.info("[HTTPoison_request] [#{url}] [#{body}]")
-    HTTPoison.post(url, body, [{"Content-Encoding", "identity"}], hackney: [timeout: 5000, max_connections: 1000])
+    response = HTTPoison.post(url, body, [{"Content-Encoding", "identity"}], hackney: [timeout: 5000, max_connections: 1000])
     Logger.info("[HTTPoison_request_response] [#{inspect response}]")
+    response
   end
 
   def url(args) do
