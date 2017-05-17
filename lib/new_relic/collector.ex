@@ -7,8 +7,8 @@ defmodule NewRelic.Collector do
     GenServer.start_link(@name, [current_time() | @default_state], name: @name)
   end
 
-  def record_value(transaction_name, data, elapsed) do
-    GenServer.cast(@name, {:record_value, {transaction_name, data}, elapsed})
+  def record_value({name, data}, elapsed) do
+    GenServer.cast(@name, {:record_value, {name, data}, elapsed})
   end
 
   def record_error(transaction_name, {type, message}) do
@@ -30,8 +30,8 @@ defmodule NewRelic.Collector do
   end
 
   def handle_call(:poll, _from, state) do
-    time = current_time()
-    {:reply, [time | state], [time | @default_state]}
+    current_time = current_time()
+    {:reply, [current_time | state], [current_time | @default_state]}
   end
 
   defp current_time do
