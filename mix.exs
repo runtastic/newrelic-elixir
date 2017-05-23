@@ -36,7 +36,7 @@ defmodule NewRelic.Mixfile do
      {:phoenix, "~> 1.2.0-rc.1"},
      {:poison, "~> 2.2.0"},
      {:decorator, "~> 1.0"},
-     {:credo, "~> 0.5", only: [:dev, :test]},
+     {:credo, "~> 0.7.4", only: [:dev, :test]},
      {:mix_test_watch, "~> 0.3", only: :dev, runtime: false},
      {:ex_doc, ">= 0.0.0", only: :dev}]
   end
