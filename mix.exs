@@ -30,15 +30,15 @@ defmodule NewRelic.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:plug, "~> 1.3"},
+    [{:plug, "~> 1.3.5"},
      {:ecto, "~> 2.1.4"},
-     {:httpoison, "~> 0.11.1"},
-     {:phoenix, "~> 1.2.0-rc.1"},
-     {:poison, "~> 2.2.0"},
-     {:decorator, "~> 1.0"},
+     {:httpoison, "~> 0.11.2"},
+     {:phoenix, "~> 1.2.4"},
+     {:poison, "~> 2.2"},
+     {:decorator, "~> 1.2.0"},
      {:credo, "~> 0.7.4", only: [:dev, :test]},
-     {:mix_test_watch, "~> 0.3", only: :dev, runtime: false},
-     {:ex_doc, ">= 0.0.0", only: :dev}]
+     {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
+     {:ex_doc, ">= 0.15.1", only: :dev}]
   end
 
   # not going to release this to hex just yet
