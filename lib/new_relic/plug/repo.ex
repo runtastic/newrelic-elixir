@@ -158,7 +158,7 @@ defmodule NewRelic.Plug.Repo do
       @spec preload([Ecto.Schema.t] | Ecto.Schema.t, preloads :: term) :: [Ecto.Schema.t] | Ecto.Schema.t
       def preload(model_or_models, preloads, opts \\ []) do
         instrument_db(:preload, model_or_models, opts, fn() ->
-          repo().preload(model_or_models, preloads)
+          repo().preload(model_or_models, preloads, opts)
         end)
       end
 
