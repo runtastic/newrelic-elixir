@@ -4,7 +4,7 @@ defmodule NewRelic.Mixfile do
   def project do
     [app: :new_relic,
      version: "0.1.2",
-     elixir: "~> 1.4.1",
+     elixir: "~> 1.7.1",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: "Elixir library for sending metrics to New Relic.",
@@ -30,12 +30,12 @@ defmodule NewRelic.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:plug, "~> 1.3.5"},
-     {:ecto, "~> 2.1.4"},
+    [{:plug, "~> 1.6.2"},
+     {:ecto, "~> 2.1.6"},
      {:httpoison, "~> 0.11.2"},
-     {:phoenix, "~> 1.2.4"},
+     {:phoenix, "~> 1.3.4"},
      {:poison, "~> 2.2"},
-     {:decorator, "~> 1.2.0"},
+     {:decorator, "~> 1.2.3"},
      {:credo, "~> 0.7.4", only: [:dev, :test]},
      {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
      {:ex_doc, ">= 0.15.1", only: :dev}]
