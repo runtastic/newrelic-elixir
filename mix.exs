@@ -31,7 +31,7 @@ defmodule NewRelic.Mixfile do
   # Type "mix help deps" for more examples and options
   defp deps do
     [{:plug, "~> 1.7.1"},
-     {:ecto, "~> 2.1.6"},
+     {:ecto, "~> 3.0.6"},
      {:httpoison, "~> 0.11.2"},
      {:phoenix, "~> 1.4.0", override: true},
      {:poison, "~> 2.2"},
