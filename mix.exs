@@ -3,8 +3,8 @@ defmodule NewRelic.Mixfile do
 
   def project do
     [app: :new_relic,
-     version: "0.1.1",
-     elixir: "~> 1.4",
+     version: "0.1.3",
+     elixir: "~> 1.7.4",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      description: "Elixir library for sending metrics to New Relic.",
@@ -30,13 +30,15 @@ defmodule NewRelic.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [{:plug, "~> 1.3"},
-     {:lhttpc, "~> 1.4"},
-     {:poison, "~> 3.0"},
-     {:decorator, "~> 1.0"},
-     {:credo, "~> 0.5", only: [:dev, :test]},
-     {:mix_test_watch, "~> 0.3", only: :dev, runtime: false},
-     {:ex_doc, ">= 0.0.0", only: :dev}]
+    [{:plug, "~> 1.7.1"},
+     {:ecto, "~> 3.0.6"},
+     {:httpoison, "~> 0.11.2"},
+     {:phoenix, "~> 1.4.0", override: true},
+     {:poison, "~> 2.2"},
+     {:decorator, "~> 1.2.3"},
+     {:credo, "~> 0.7.4", only: [:dev, :test]},
+     {:mix_test_watch, "~> 0.4.0", only: :dev, runtime: false},
+     {:ex_doc, ">= 0.15.1", only: :dev}]
   end
 
   # not going to release this to hex just yet
